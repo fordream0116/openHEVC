@@ -42,6 +42,40 @@
 #define MAX_NB_THREADS 16
 #define SHIFT_CTB_WPP 2
 
+#define SVC_EXTENSION
+#ifdef SVC_EXTENSION
+#define VPS_EXTENSION
+#define SCALED_REF_LAYER_OFFSETS 1
+#define MAX_LAYERS  2
+#define PHASE_DERIVATION_IN_INTEGER 1
+#define ILP_DECODED_PICTURE 1
+#define CHROMA_UPSAMPLING   1
+
+#define REF_IDX_FRAMEWORK   1
+
+#ifdef REF_IDX_FRAMEWORK
+#define REF_IDX_ME_ZEROMV                1
+#define REF_IDX_MFM                      1
+#define JCTVC_M0458_INTERLAYER_RPS_SIG   1
+#if JCTVC_M0458_INTERLAYER_RPS_SIG
+#define ZERO_NUM_DIRECT_LAYERS       1
+#endif
+#endif
+#endif
+
+#ifdef VPS_EXTENSION
+#define MAX_VPS_NUM_SCALABILITY_TYPES       16
+#define MAX_VPS_LAYER_ID_PLUS1              MAX_LAYERS
+#define MAX_VPS_LAYER_SETS_PLUS1            1024
+#define VPS_EXTN_MASK_AND_DIM_INFO          1
+#define VPS_MOVE_DIR_DEPENDENCY_FLAG        1
+#define VPS_EXTN_DIRECT_REF_LAYERS          1
+#define VPS_EXTN_PROFILE_INFO               1
+#define VPS_PROFILE_OUTPUT_LAYERS           1
+#define VPS_EXTN_OP_LAYER_SETS              1
+#endif
+#define DERIVE_LAYER_ID_LIST_VARIABLES      1
+
 /**
  * 7.4.2.1
  */
@@ -329,12 +363,21 @@ typedef struct VUI {
     int log2_max_mv_length_vertical;
 } VUI;
 
+typedef struct ProfileTierLevel {
+    int profile_space;
+    uint8_t tier_flag;
+    int profile_idc;
+    int profile_compatibility_flag[32];
+    int level_idc;
+    int progressive_source_flag;
+    int interlaced_source_flag;
+    int non_packed_constraint_flag;
+    int frame_only_constraint_flag;
+} ProfileTierLevel;
+
 typedef struct PTL {
-    int general_profile_space;
-    uint8_t general_tier_flag;
-    int general_profile_idc;
-    int general_profile_compatibility_flag[32];
-    int general_level_idc;
+    ProfileTierLevel general_PTL;
+    ProfileTierLevel sub_layer_PTL[MAX_SUB_LAYERS];
 
     uint8_t sub_layer_profile_present_flag[MAX_SUB_LAYERS];
     uint8_t sub_layer_level_present_flag[MAX_SUB_LAYERS];
@@ -364,6 +407,51 @@ typedef struct HEVCVPS {
     uint8_t vps_poc_proportional_to_timing_flag;
     int vps_num_ticks_poc_diff_one; ///< vps_num_ticks_poc_diff_one_minus1 + 1
     int vps_num_hrd_parameters;
+
+    int vps_extension_flag;
+#ifdef VPS_EXTENSION
+    int  avc_base_layer_flag;
+    int splitting_flag;
+    int scalability_mask[MAX_VPS_NUM_SCALABILITY_TYPES];
+    int dimension_id_len[MAX_VPS_NUM_SCALABILITY_TYPES];
+    int m_numScalabilityTypes;
+    int nuh_layer_id_present_flag;
+    int layer_id_in_nuh[MAX_VPS_LAYER_ID_PLUS1];
+    int m_layerIdInVps[MAX_VPS_LAYER_ID_PLUS1];
+    
+    int dimension_id[MAX_VPS_LAYER_ID_PLUS1][MAX_VPS_NUM_SCALABILITY_TYPES];
+#if DERIVE_LAYER_ID_LIST_VARIABLES
+    int         m_layerSetLayerIdList[MAX_VPS_LAYER_SETS_PLUS1][MAX_VPS_LAYER_ID_PLUS1];
+    int         m_numLayerInIdList[MAX_VPS_LAYER_SETS_PLUS1];
+#endif
+#if VPS_EXTN_DIRECT_REF_LAYERS
+    unsigned int    m_numDirectRefLayers[MAX_VPS_LAYER_ID_PLUS1];
+    unsigned int    direct_dependency_flag[MAX_VPS_LAYER_ID_PLUS1][MAX_VPS_LAYER_ID_PLUS1];
+    unsigned int    m_refLayerId[MAX_VPS_LAYER_ID_PLUS1][MAX_VPS_LAYER_ID_PLUS1];
+#endif
+#if VPS_EXTN_PROFILE_INFO
+    unsigned int    vps_profile_present_flag[MAX_VPS_LAYER_SETS_PLUS1];    // The value with index 0 will not be used.
+    unsigned int    profile_ref[MAX_VPS_LAYER_SETS_PLUS1];    // The value with index 0 will not be used.
+    PTL**     PTLExt;
+#endif
+#if VPS_PROFILE_OUTPUT_LAYERS
+    unsigned int       vps_num_profile_tier_level;
+    int         more_output_layer_sets_than_default_flag;
+    int         num_add_output_layer_sets;
+    int         default_one_target_output_layer_flag;
+    int         profile_level_tier_idx[64];
+#endif
+    
+#if VPS_EXTN_OP_LAYER_SETS
+    
+    unsigned int       m_numOutputLayerSets;
+    unsigned int       output_layer_set_idx[MAX_VPS_LAYER_SETS_PLUS1];
+    int       output_layer_flag[MAX_VPS_LAYER_SETS_PLUS1][MAX_VPS_LAYER_ID_PLUS1];
+#endif
+#if JCTVC_M0458_INTERLAYER_RPS_SIG
+    int       max_one_active_ref_layer_flag;
+#endif
+#endif
 
     uint8_t threadCnt;
     AVBufferRef* freed;
@@ -453,6 +541,12 @@ typedef struct HEVCSPS {
 
     int qp_bd_offset;
 
+#if SCALED_REF_LAYER_OFFSETS
+    HEVCWindow      scaled_ref_layer_window;
+#endif
+#if REF_IDX_MFM
+    int set_mfm_enabled_flag;
+#endif
     uint8_t threadCnt;
     AVBufferRef* freed;
 } HEVCSPS;
