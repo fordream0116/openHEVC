@@ -35,6 +35,7 @@
 #include "cabac_functions.h"
 #include "dsputil.h"
 #include "golomb.h"
+#include "up_sample_filter.h"
 #include "hevc.h"
 
 #define POC_DISPLAY_MD5
@@ -407,15 +408,15 @@ static int decode_lt_rps(HEVCContext *s, LongTermRPS *rps, GetBitContext *gb)
 }
 #ifdef SVC_EXTENSION
 static void hls_upsample_v_bl_picture(AVCodecContext *avctxt, void *input_ctb_row){
-   /* HEVCContext *s = avctxt->priv_data;
+    HEVCContext *s = avctxt->priv_data;
     int *channel = input_ctb_row;
-    s->hevcdsp.upsample_v_base_layer_frame( s->EL_frame, s->BL_frame->frame, s->buffer_frame, up_sample_filter_luma, up_sample_filter_chroma, &s->sps->scaled_ref_layer_window, &s->up_filter_inf, *channel);*/
+    s->hevcdsp.upsample_v_base_layer_frame( s->EL_frame, s->BL_frame->frame, s->buffer_frame, up_sample_filter_luma, up_sample_filter_chroma, &s->sps->scaled_ref_layer_window, &s->up_filter_inf, *channel);
     
 }
 static void hls_upsample_h_bl_picture(AVCodecContext *avctxt, void *input_ctb_row){
-   /* HEVCContext *s = avctxt->priv_data;
+   HEVCContext *s = avctxt->priv_data;
     int *channel = input_ctb_row;
-    s->hevcdsp.upsample_h_base_layer_frame( s->EL_frame, s->BL_frame->frame, s->buffer_frame, up_sample_filter_luma, up_sample_filter_chroma, &s->sps->scaled_ref_layer_window, &s->up_filter_inf, *channel);*/
+    s->hevcdsp.upsample_h_base_layer_frame( s->EL_frame, s->BL_frame->frame, s->buffer_frame, up_sample_filter_luma, up_sample_filter_chroma, &s->sps->scaled_ref_layer_window, &s->up_filter_inf, *channel);
     
 }
 #endif
@@ -2325,7 +2326,7 @@ static int decode_nal_unit(HEVCContext *s, const uint8_t *nal, int length)
         return 0;
     
 /*    if (s->temporal_id >= s->temporal_layer_id)
-        return 0;*/
+        return 0;   */
     
 
     switch (s->nal_unit_type) {
