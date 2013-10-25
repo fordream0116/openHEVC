@@ -1012,7 +1012,7 @@ typedef struct HEVCContext {
     AVBufferPool *tab_mvf_pool;
     AVBufferPool *rpl_tab_pool;
     int dec_id;
-    
+    int temporal_layer_id;
 #ifdef SVC_EXTENSION
     int heightBL;
     int widthBL;
@@ -1020,6 +1020,7 @@ typedef struct HEVCContext {
     short *buffer_frame[3];
     UpsamplInf up_filter_inf;
     HEVCFrame *BL_frame;
+    int decoder_id;
 #endif
     
 } HEVCContext;

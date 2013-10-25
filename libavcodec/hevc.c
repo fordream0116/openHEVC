@@ -2213,7 +2213,7 @@ static int hls_nal_unit(HEVCContext *s)
            "nal_unit_type: %d, nuh_layer_id: %dtemporal_id: %d\n",
            s->nal_unit_type, s->nuh_layer_id, s->temporal_id);
 
-    return (s->nuh_layer_id == 0);
+    return (s->nuh_layer_id);
 }
 
 static void restore_tqb_pixels(HEVCContext *s)
@@ -2312,14 +2312,21 @@ static int decode_nal_unit(HEVCContext *s, const uint8_t *nal, int length)
         return ret;
 
     ret = hls_nal_unit(s);
+    
+    
     if (ret < 0) {
         av_log(s->avctx, AV_LOG_ERROR, "Invalid NAL unit %d, skipping.\n",
-                s->nal_unit_type);
-        if (s->avctx->err_recognition & AV_EF_EXPLODE)
+               s->nal_unit_type);
+        if (s->avctx->err_recognition & AV_EF_EXPLODE) {
             return ret;
+        }
         return 0;
-    } else if (!ret)
+    } else if (ret != (s->decoder_id) && s->nal_unit_type != NAL_VPS)
         return 0;
+    
+/*    if (s->temporal_id >= s->temporal_layer_id)
+        return 0;*/
+    
 
     switch (s->nal_unit_type) {
     case NAL_VPS:
