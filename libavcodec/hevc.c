@@ -405,12 +405,32 @@ static int decode_lt_rps(HEVCContext *s, LongTermRPS *rps, GetBitContext *gb)
 
     return 0;
 }
+#ifdef SVC_EXTENSION
+static void hls_upsample_v_bl_picture(AVCodecContext *avctxt, void *input_ctb_row){
+   /* HEVCContext *s = avctxt->priv_data;
+    int *channel = input_ctb_row;
+    s->hevcdsp.upsample_v_base_layer_frame( s->EL_frame, s->BL_frame->frame, s->buffer_frame, up_sample_filter_luma, up_sample_filter_chroma, &s->sps->scaled_ref_layer_window, &s->up_filter_inf, *channel);*/
+    
+}
+static void hls_upsample_h_bl_picture(AVCodecContext *avctxt, void *input_ctb_row){
+   /* HEVCContext *s = avctxt->priv_data;
+    int *channel = input_ctb_row;
+    s->hevcdsp.upsample_h_base_layer_frame( s->EL_frame, s->BL_frame->frame, s->buffer_frame, up_sample_filter_luma, up_sample_filter_chroma, &s->sps->scaled_ref_layer_window, &s->up_filter_inf, *channel);*/
+    
+}
+#endif
+
+
 
 static int hls_slice_header(HEVCContext *s)
 {
     GetBitContext *gb = &s->HEVClc->gb;
     SliceHeader   *sh = &s->sh;
     int i, j, ret;
+
+#if JCTVC_M0458_INTERLAYER_RPS_SIG
+    int NumILRRefIdx;
+#endif
 
     // Coded parameters
     sh->first_slice_in_pic_flag = get_bits1(gb);
@@ -578,6 +598,55 @@ static int hls_slice_header(HEVCContext *s)
             s->nal_unit_type != NAL_RADL_R &&
             s->nal_unit_type != NAL_RASL_R)
             s->pocTid0 = s->poc;
+#if REF_IDX_FRAMEWORK
+#if JCTVC_M0458_INTERLAYER_RPS_SIG
+        s->sh.active_num_ILR_ref_idx = 0;
+        NumILRRefIdx = s->vps->m_numDirectRefLayers[s->nuh_layer_id];
+        if(s->nuh_layer_id > 0 && NumILRRefIdx>0) {
+            s->sh.inter_layer_pred_enabled_flag = get_bits1(gb);
+            if(s->sh.inter_layer_pred_enabled_flag) {
+                if(NumILRRefIdx>1)  {
+                    int numBits = 1;
+                    while ((1 << numBits) < NumILRRefIdx)   {
+                        numBits++;
+                    }
+                    if( !((HEVCContext*)s->avctx->priv_data)->vps->max_one_active_ref_layer_flag)
+                        s->sh.active_num_ILR_ref_idx = get_bits(gb, numBits) + 1;
+                    else
+                        s->sh.active_num_ILR_ref_idx = 1;
+                    for(i = 0; i < s->sh.active_num_ILR_ref_idx; i++ ){
+                        s->sh.inter_layer_pred_layer_idc[i] =  get_bits(gb, numBits);
+                    }
+                }   else    {
+                    s->sh.active_num_ILR_ref_idx = 1;
+                    s->sh.inter_layer_pred_layer_idc[0] = 0;
+                }
+            }
+        }
+#else
+        if( s->layer_id > 0 )
+            s->sh.active_num_ILR_ref_idx = s->vps->m_numDirectRefLayers[sc->layer_id];
+#endif
+#endif
+#ifdef SVC_EXTENSION
+        if(s->nuh_layer_id && sh->first_slice_in_pic_flag){ /*  Add reference frame &&  upsample the base layer frame   */
+            int CTB = 64;
+            int arg[150];
+            int res[150];
+            int nb   = s->BL_frame->frame->height <= s->EL_frame->height ? s->BL_frame->frame->height:s->EL_frame->height;
+            if ((ret = ff_hevc_set_new_ref(s, &s->EL_frame, s->poc/*, 1*/))< 0)
+                return ret;
+            nb = (nb / CTB) + (nb%CTB ? 1:0);
+            for(i=0; i < nb; i++)
+                arg[i] = i;
+            s->avctx->execute(s->avctx, (void *) hls_upsample_h_bl_picture, arg, res, nb, sizeof(int));
+            nb   = s->EL_frame->width;
+            nb = (nb / CTB) + (nb%CTB ? 1:0);
+            for(i=0; i < nb; i++)
+                arg[i] = i;
+            s->avctx->execute(s->avctx, (void *) hls_upsample_v_bl_picture, arg, res, nb, sizeof(int));
+        }
+#endif
 
         if (s->sps->sao_enabled) {
             sh->slice_sample_adaptive_offset_flag[0] = get_bits1(gb);

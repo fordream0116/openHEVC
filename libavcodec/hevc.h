@@ -709,6 +709,15 @@ typedef struct SliceHeader {
     // Inferred parameters
     int8_t slice_qp;
     int    slice_ctb_addr_rs;
+
+#if REF_IDX_FRAMEWORK
+    int inter_layer_pred_enabled_flag;
+#endif
+    
+#if JCTVC_M0458_INTERLAYER_RPS_SIG
+    int     active_num_ILR_ref_idx;        //< Active inter-layer reference pictures
+    int     inter_layer_pred_layer_idc[MAX_VPS_LAYER_ID_PLUS1];
+#endif
     
 #ifdef SVC_EXTENSION
     int ScalingFactor[MAX_LAYERS][2];
