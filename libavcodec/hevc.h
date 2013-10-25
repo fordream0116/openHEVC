@@ -289,6 +289,21 @@ enum ScanType {
     SCAN_VERT,
 };
 
+#ifdef SVC_EXTENSION
+typedef struct UpsamplInf {
+	int addXLum;
+	int addYLum;
+	int scaleXLum;
+	int scaleYLum;
+	int addXCr;
+	int addYCr;
+	int scaleXCr;
+	int scaleYCr;
+} UpsamplInf;
+#endif
+
+
+
 typedef struct ShortTermRPS {
     int num_negative_pics;
     int num_delta_pocs;
@@ -694,6 +709,11 @@ typedef struct SliceHeader {
     // Inferred parameters
     int8_t slice_qp;
     int    slice_ctb_addr_rs;
+    
+#ifdef SVC_EXTENSION
+    int ScalingFactor[MAX_LAYERS][2];
+    int ScalingPosition[MAX_LAYERS][2];
+#endif
 } SliceHeader;
 
 typedef struct CodingTree {
@@ -983,6 +1003,15 @@ typedef struct HEVCContext {
     AVBufferPool *tab_mvf_pool;
     AVBufferPool *rpl_tab_pool;
     int dec_id;
+    
+#ifdef SVC_EXTENSION
+    int heightBL;
+    int widthBL;
+    AVFrame *EL_frame;
+    short *buffer_frame[3];
+    UpsamplInf up_filter_inf;
+    HEVCFrame *BL_frame;
+#endif
     
 } HEVCContext;
 

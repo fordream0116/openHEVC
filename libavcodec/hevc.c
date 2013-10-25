@@ -149,6 +149,11 @@ static void pic_arrays_free(HEVCContext *s)
     if((s->pps->num_tile_rows > 1 || s->pps->num_tile_columns > 1) && s->threads_number>1 /*&& s->pps->entropy_coding_sync_enabled_flag*/)
         for (i = 0; i < s->threads_number; i++)
             av_freep(&s->HEVClcList[i]->save_boundary_strengths);
+#ifdef SVC_EXTENSION
+    av_freep(&s->buffer_frame[0]);
+    av_freep(&s->buffer_frame[1]);
+    av_freep(&s->buffer_frame[2]);
+#endif
     
 }
 
@@ -219,7 +224,37 @@ static int pic_arrays_init(HEVCContext *s)
                    goto fail;
            }
     }
-    
+#ifdef SVC_EXTENSION
+    if(s->nuh_layer_id)    {
+        int heightBL = s->heightBL;
+        int widthBL = s->widthBL;
+        
+        int heightEL = s->sps->height - s->sps->scaled_ref_layer_window.bottom_offset - s->sps->scaled_ref_layer_window.top_offset;
+        int widthEL = s->sps->width   - s->sps->scaled_ref_layer_window.left_offset   - s->sps->scaled_ref_layer_window.right_offset;
+        s->sh.ScalingFactor[s->nuh_layer_id][0] = av_clip_c(((widthEL  << 8) + (widthBL  >> 1)) / widthBL,  -4096, 4095);
+        s->sh.ScalingFactor[s->nuh_layer_id][1] = av_clip_c(((heightEL << 8) + (heightBL >> 1)) / heightBL, -4096, 4095);
+        s->sh.ScalingPosition[s->nuh_layer_id][0] = ((widthBL  << 16) + (widthEL  >> 1)) / widthEL;
+        s->sh.ScalingPosition[s->nuh_layer_id][1] = ((heightBL << 16) + (heightEL >> 1)) / heightEL;
+        s->up_filter_inf.addXLum = ( widthEL >> 1 )  / widthEL  + ( 1 << ( 11 ) );
+        s->up_filter_inf.addYLum = ( heightEL >> 1 )  / heightEL+ ( 1 << ( 11 ) );
+        s->up_filter_inf.scaleXLum = ( ( widthBL << 16 ) + ( widthEL >> 1 ) ) / widthEL;
+        s->up_filter_inf.scaleYLum = ( ( heightBL << 16 ) + ( heightEL >> 1 ) ) / heightEL;
+        
+        widthEL  >>= 1;
+        heightEL >>= 1;
+        widthBL  >>= 1;
+        heightBL >>= 1;
+        
+        s->up_filter_inf.addXCr       =( widthEL >> 1 ) / widthEL + ( 1 << ( 11 ) );
+        s->up_filter_inf.addYCr       = ( ( ( heightBL ) << ( 14 ) ) + ( heightEL >> 1 ) ) / heightEL+ ( 1 << ( 11 ) );
+        s->up_filter_inf.scaleXCr     = ( ( widthBL << 16 ) + ( widthEL >> 1 ) ) / widthEL;
+        s->up_filter_inf.scaleYCr     = ( ( heightBL << 16 ) + ( heightEL >> 1 ) ) / heightEL;
+        
+        s->buffer_frame[0] = av_malloc(pic_size*sizeof(short));
+        s->buffer_frame[1] = av_malloc((pic_size>>2)*sizeof(short));
+        s->buffer_frame[2] = av_malloc((pic_size>>2)*sizeof(short));
+    }
+#endif
     return 0;
 fail:
     pic_arrays_free(s);
