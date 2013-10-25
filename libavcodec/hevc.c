@@ -2205,7 +2205,7 @@ static int hls_nal_unit(HEVCContext *s)
 
     s->nal_unit_type = get_bits(gb, 6);
 
-    nuh_layer_id   = get_bits(gb, 6);
+    s->nuh_layer_id   = get_bits(gb, 6);
     s->temporal_id = get_bits(gb, 3) - 1;
     if (s->temporal_id < 0)
         return AVERROR_INVALIDDATA;
@@ -2214,7 +2214,7 @@ static int hls_nal_unit(HEVCContext *s)
            "nal_unit_type: %d, nuh_layer_id: %dtemporal_id: %d\n",
            s->nal_unit_type, nuh_layer_id, s->temporal_id);
 
-    return (nuh_layer_id == 0);
+    return (s->nuh_layer_id == 0);
 }
 
 static void restore_tqb_pixels(HEVCContext *s)
