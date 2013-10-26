@@ -128,6 +128,7 @@ static void video_decode_example(const char *filename)
             if (display_flags == ENABLE) {
                 libOpenHevcGetOutput(openHevcHandle, 1, &openHevcFrame);
                 libOpenHevcGetPictureSize2(openHevcHandle, &openHevcFrame.frameInfo);
+                printf("%d %d\n", openHevcFrame.frameInfo.nWidth, openHevcFrame.frameInfo.nHeight);
                 SDL_Display((openHevcFrame.frameInfo.nYPitch - openHevcFrame.frameInfo.nWidth)/2, openHevcFrame.frameInfo.nWidth, openHevcFrame.frameInfo.nHeight,
                         openHevcFrame.pvY, openHevcFrame.pvU, openHevcFrame.pvV);
             }

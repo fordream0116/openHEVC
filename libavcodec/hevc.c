@@ -379,6 +379,8 @@ static int hls_slice_header(HEVCContext *s)
 
     if (s->sps != (HEVCSPS*)s->sps_list[s->pps->sps_id]->data) {
         s->sps = (HEVCSPS*)s->sps_list[s->pps->sps_id]->data;
+        if (!s->vps_list[s->sps->vps_id])
+            return AVERROR(ENOMEM);
         s->vps = (HEVCVPS*)s->vps_list[s->sps->vps_id]->data;
 
         pic_arrays_free(s);
@@ -2672,7 +2674,8 @@ static int hevc_decode_frame(AVCodecContext *avctx, void *data, int *got_output,
     s->ref = NULL;
     ret = decode_nal_units(s, avpkt->data, avpkt->size);
     if (ret < 0) {
-        s->ref->is_decoded = 1;
+        if (s->ref)
+            s->ref->is_decoded = 1;
         return ret;
     }
     if (s->enable_parallel_tiles == 1)

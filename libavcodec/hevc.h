@@ -976,6 +976,8 @@ typedef struct HEVCContext {
                           ///< as a format defined in 14496-15
     int nal_length_size;  ///< Number of bytes used for nal length (1, 2 or 4)
 
+    int active_seq_parameter_set_id;
+
 
     AVBufferPool *tab_mvf_pool;
     AVBufferPool *rpl_tab_pool;
