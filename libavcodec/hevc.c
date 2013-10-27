@@ -2065,7 +2065,6 @@ static int hls_decode_entry_tiles(AVCodecContext *avctxt, int *input_ctb_row, in
     s = s->sList[self_id];
     lc = s->HEVClc;
     lc->tile_pos_rs = s->pps->tile_pos_rs[ctb_row];
-    s->dec_id = ctb_row; 
     if(ctb_row) {
         ret = init_get_bits(&lc->gb, s->data+s->sh.offset[ctb_row - 1], s->sh.size[ctb_row - 1] * 8);
         if (ret < 0)
@@ -3143,6 +3142,8 @@ static const AVOption options[] = {
     { "decode-checksum", "decode picture checksum SEI message", OFFSET(decode_checksum_sei),
         AV_OPT_TYPE_INT, {.i64 = 0}, 0, 1, PAR },
     { "strict-displaywin", "stricly apply default display window size", OFFSET(strict_def_disp_win),
+        AV_OPT_TYPE_INT, {.i64 = 0}, 0, 1, PAR },
+    { "decoder-id", "set the decoder id", OFFSET(decoder_id),
         AV_OPT_TYPE_INT, {.i64 = 0}, 0, 1, PAR },
     { NULL },
 };

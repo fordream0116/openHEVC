@@ -1011,7 +1011,6 @@ typedef struct HEVCContext {
 
     AVBufferPool *tab_mvf_pool;
     AVBufferPool *rpl_tab_pool;
-    int dec_id;
     int temporal_layer_id;
 #ifdef SVC_EXTENSION
     int heightBL;
