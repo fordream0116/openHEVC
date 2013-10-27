@@ -3101,9 +3101,6 @@ static av_cold int hevc_decode_init(AVCodecContext *avctx)
         else
             s->threads_type = FF_THREAD_SLICE;
 
-    
-   
-    
     for (i = 1; i < s->threads_number ; i++) {
         s->sList[i] = av_malloc(sizeof(HEVCContext));
         memcpy(s->sList[i], s, sizeof(HEVCContext));
@@ -3125,7 +3122,6 @@ static av_cold int hevc_init_thread_copy(AVCodecContext *avctx)
     ret = hevc_init_context(avctx);
     if (ret < 0)
         return ret;
-
     return 0;
 }
 

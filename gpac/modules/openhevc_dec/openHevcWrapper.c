@@ -13,40 +13,56 @@ typedef struct OpenHevcWrapperContext {
     AVCodecParserContext *parser;
 } OpenHevcWrapperContext;
 
+
+typedef struct OpenHevcWrapperContexts {
+    OpenHevcWrapperContext **wraper;
+    int nb_decoders;
+} OpenHevcWrapperContexts;
 OpenHevc_Handle libOpenHevcInit(int nb_pthreads)
 {
     /* register all the codecs */
+    int i;
+    OpenHevcWrapperContext * openHevcContext;
     avcodec_register_all();
-
-    OpenHevcWrapperContext * openHevcContext = av_malloc(sizeof(OpenHevcWrapperContext));
-    av_init_packet(&openHevcContext->avpkt);
-    openHevcContext->codec = avcodec_find_decoder(AV_CODEC_ID_HEVC);
-    if (!openHevcContext->codec) {
-        fprintf(stderr, "codec not found\n");
-        return NULL;
-    }
-    openHevcContext->parser  = av_parser_init( openHevcContext->codec->id );
-    openHevcContext->c       = avcodec_alloc_context3(openHevcContext->codec);
-    openHevcContext->picture = avcodec_alloc_frame();
+    OpenHevcWrapperContexts* openHevcContexts = av_malloc(sizeof(OpenHevcWrapperContexts));
+    openHevcContexts->nb_decoders = 2;
+    openHevcContexts->wraper = av_malloc(sizeof(OpenHevcWrapperContext*)*openHevcContexts->nb_decoders);
+    for(i=0; i < openHevcContexts->nb_decoders; i++){
+        openHevcContexts->wraper[i] = av_malloc(sizeof(OpenHevcWrapperContext));
+    
+        openHevcContext = openHevcContexts->wraper[i];
+        av_init_packet(&openHevcContext->avpkt);
+        openHevcContext->codec = avcodec_find_decoder(AV_CODEC_ID_HEVC);
+        if (!openHevcContext->codec) {
+            fprintf(stderr, "codec not found\n");
+            return NULL;
+        }
+    
+        openHevcContext->parser  = av_parser_init( openHevcContext->codec->id );
+        openHevcContext->c       = avcodec_alloc_context3(openHevcContext->codec);
+        openHevcContext->picture = avcodec_alloc_frame();
 
     
-    if(openHevcContext->codec->capabilities&CODEC_CAP_TRUNCATED)
-        openHevcContext->c->flags |= CODEC_FLAG_TRUNCATED; /* we do not send complete frames */
+        if(openHevcContext->codec->capabilities&CODEC_CAP_TRUNCATED)
+            openHevcContext->c->flags |= CODEC_FLAG_TRUNCATED; /* we do not send complete frames */
 
-    /* For some codecs, such as msmpeg4 and mpeg4, width and height
-         MUST be initialized there because this information is not
-         available in the bitstream. */
+        /* For some codecs, such as msmpeg4 and mpeg4, width and height
+            MUST be initialized there because this information is not
+            available in the bitstream. 
+         */
 
-    /* open it */
-    if(nb_pthreads)	{
-        if ((nb_pthreads & 256)  != 0)
-            av_opt_set(openHevcContext->c, "thread_type", "frame", 0);
-        else
-            av_opt_set(openHevcContext->c, "thread_type", "slice", 0);
-        av_opt_set_int(openHevcContext->c, "threads", nb_pthreads& 255, 0);
+        /* open it */
+        if(nb_pthreads)	{
+            if ((nb_pthreads & 256)  != 0)
+                av_opt_set(openHevcContext->c, "thread_type", "frame", 0);
+            else
+                av_opt_set(openHevcContext->c, "thread_type", "slice", 0);
+            av_opt_set_int(openHevcContext->c, "threads", nb_pthreads& 255, 0);
+        }
+        /*  Set the decoder id    */ 
+        av_opt_set_int(openHevcContext->c->priv_data, "decoder-id", i, 0);
     }
-
-    return (OpenHevc_Handle) openHevcContext;
+    return (OpenHevc_Handle) openHevcContexts->wraper[0];
 }
 
 

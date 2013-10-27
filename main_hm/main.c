@@ -58,21 +58,16 @@ static void video_decode_example(const char *filename)
     AVFormatContext *pFormatCtx=NULL;
     AVInputFormat *file_iformat;
     AVPacket        packet;
-
-    FILE *f     = NULL;
     FILE *fout  = NULL;
-    unsigned char * buf;
 
     int init    = 1;
     int nbFrame = 0;
-    int pts     = 0;
     int stop    = 0;
     int stop_dec= 0;
     int got_picture;
     float time  = 0.0;
     OpenHevc_Frame openHevcFrame;
     OpenHevc_Frame_cpy openHevcFrameCpy;
-    OpenHevcWrapperContext *ost;
 
     OpenHevc_Handle openHevcHandle;
     openHevcHandle = libOpenHevcInit(nb_pthreads + (enable_framebase<<8)/*, pFormatCtx*/);
