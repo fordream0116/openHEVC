@@ -289,6 +289,21 @@ enum ScanType {
     SCAN_VERT,
 };
 
+#ifdef SVC_EXTENSION
+typedef struct UpsamplInf {
+	int addXLum;
+	int addYLum;
+	int scaleXLum;
+	int scaleYLum;
+	int addXCr;
+	int addYCr;
+	int scaleXCr;
+	int scaleYCr;
+} UpsamplInf;
+#endif
+
+
+
 typedef struct ShortTermRPS {
     int num_negative_pics;
     int num_delta_pocs;
@@ -610,6 +625,8 @@ typedef struct HEVCPPS {
     int *col_bd; ///< ColBd
     int *row_bd; ///< RowBd
     int *col_idxX;
+    int max_col_width;
+    int max_row_height;
 
     int *ctb_addr_rs_to_ts; ///< CtbAddrRSToTS
     int *ctb_addr_ts_to_rs; ///< CtbAddrTSToRS
@@ -692,6 +709,20 @@ typedef struct SliceHeader {
     // Inferred parameters
     int8_t slice_qp;
     int    slice_ctb_addr_rs;
+
+#if REF_IDX_FRAMEWORK
+    int inter_layer_pred_enabled_flag;
+#endif
+    
+#if JCTVC_M0458_INTERLAYER_RPS_SIG
+    int     active_num_ILR_ref_idx;        //< Active inter-layer reference pictures
+    int     inter_layer_pred_layer_idc[MAX_VPS_LAYER_ID_PLUS1];
+#endif
+    
+#ifdef SVC_EXTENSION
+    int ScalingFactor[MAX_LAYERS][2];
+    int ScalingPosition[MAX_LAYERS][2];
+#endif
 } SliceHeader;
 
 typedef struct CodingTree {
@@ -858,6 +889,7 @@ typedef struct HEVCLocalContext {
     DECLARE_ALIGNED(16, int16_t, mc_buffer[(MAX_PB_SIZE + 7) * MAX_PB_SIZE]);
     FilterData *save_boundary_strengths;
     int nb_saved;
+    int tile_pos_rs;
 } HEVCLocalContext;
 
 typedef struct HEVCContext {
@@ -981,6 +1013,17 @@ typedef struct HEVCContext {
 
     AVBufferPool *tab_mvf_pool;
     AVBufferPool *rpl_tab_pool;
+    int temporal_layer_id;
+#ifdef SVC_EXTENSION
+    int heightBL;
+    int widthBL;
+    AVFrame *EL_frame;
+    short *buffer_frame[3];
+    UpsamplInf up_filter_inf;
+    HEVCFrame *BL_frame;
+    int decoder_id;
+#endif
+    
 } HEVCContext;
 
 int ff_hevc_decode_short_term_rps(HEVCContext *s, ShortTermRPS *rps,
