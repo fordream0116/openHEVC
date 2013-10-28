@@ -1036,6 +1036,7 @@ typedef struct HEVCContext {
     int nal_length_size;  ///< Number of bytes used for nal length (1, 2 or 4)
     int nuh_layer_id;
 
+    int picture_struct;
 } HEVCContext;
 
 int ff_hevc_decode_short_term_rps(HEVCContext *s, ShortTermRPS *rps,
